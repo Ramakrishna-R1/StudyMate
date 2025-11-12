@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>StudyMate</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.1/dist/js/bootstrap.bundle.min.js"></script>
+    <style>
+        .container-fluid{
+            display: flex;
+            flex-flow: column;
+            align-items: center;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%,-50%);
+            padding: 10px;
+            border: 2px solid #3d52a0;
+            width: 40%;
+            border-radius: 25px;
+            background: rgba(255,255,255,0.3);
+        }
+        body{
+            background-image: url("bg_login.jpg");
+            background-size: cover;
+            background-repeat: no-repeat;
+        }
+    </style>
+    <script>
+        function validate(){
+            let email=document.getElementById('email').value;
+            let npass=document.getElementById('npassword').value;
+            let cpass=document.getElementById('cpassword').value;
+            if(npass != cpass) {
+                alert('Passwords do not match.');
+                return;
+            }
+            if(!npass || !cpass || !email){
+                alert('Please enter all fields.');
+                return;
+            }
+
+            fetch('http://localhost:3000/signup', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    email: email,
+                    password: npass
+                })
+            })
+            .then(response => {
+                if(!response.ok){
+                    return response.text().then(text => {
+                        throw new Error(`Error: ${response.status} - ${text}`);
+                    });
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data.message === 'User created successfully') {
+                    // Redirect to login page after successful signup
+                    window.location.href = 'home.html';
+                } else {
+                    alert(data.message);  // Display error message from server
+                }
+            })
+            .catch(error => {
+                console.log('Error:'+ error);
+                alert(error);
+            });
+        }
+    </script>
+</head>
+<body>
+    <div class="login-box">
+        <div class="container-fluid">
+            <h3>Sign up</h3>
+            <input type="email" placeholder="Email" id="email" class="form-control" style="width: 300px;"><br>
+            <input type="password" placeholder="New Password" id="npassword" class="form-control" style="width: 300px;"><br>
+            <input type="password" placeholder="Confirm Password" id="cpassword" class="form-control" style="width: 300px;"><br>
+            <button id="submit" class="btn btn-primary" onclick="validate()">Submit</button>
+        </div>
+    </div>
+</body>
+</html>

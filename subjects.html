@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>StudyMate - Study</title>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.1/dist/js/bootstrap.bundle.min.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.1/dist/css/bootstrap.min.css">
+    <style>
+        body {
+            background-color: #f4f4f9;
+            font-family: Arial, sans-serif;
+        }
+        .navbar {
+            background-color: #3d52a0;
+            color: #fff;
+        }
+        .navbar-nav .nav-link {
+            color: #fff;
+        }
+        .navbar-brand {
+            font-weight: bold;
+            color: black;
+        }
+        .navbar-nav .nav-link.active {
+            color: #7091e6;
+        }
+        .navbar-nav .nav-link:hover {
+            color: #adbbda;
+        }
+        .container {
+            margin-top: 20px;
+            max-width: 900px;
+        }
+        .study-section {
+            background: #ffffff;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+        }
+        .timer-display {
+            font-size: 2rem;
+            font-weight: bold;
+            text-align: center;
+            color: #3d52a0;
+        }
+        .btn-primary {
+            background-color: #3d52a0;
+            border-color: #3d52a0;
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg">
+        <div class="container-fluid">
+            <a class="navbar-brand">StudyMate</a>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav">
+                    <li class="nav-item"><a class="nav-link" href="home.html">Home</a></li>
+                    <li class="nav-item"><a class="nav-link" href="sessions.html">Sessions</a></li>
+                    <li class="nav-item"><a class="nav-link" href="subjects.html">Subjects</a></li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+    
+    <div class="container">
+        <div class="study-section">
+            <h3>Select Subject</h3>
+            <select id="subjectSelect" class="form-select" onchange="loadExams()">
+                <!-- Dynamic Subject Options will go here -->
+            </select>
+            <!-- Add new Subject -->
+            <h5 class="mt-3">Add New Subject</h5>
+            <input type="text" id="newSubjectName" class="form-control mb-2" placeholder="Subject Name">
+            <input type="number" id="newSubjectCredits" class="form-control mb-2" placeholder="Credits">
+            <input type="number" id="newSubjectChapters" class="form-control mb-2" placeholder="Chapters">
+            <button class="btn btn-success" onclick="addSubject()">Add Subject</button>
+        </div>
+        
+        <div class="study-section">
+            <h3>Exams for Selected Subject</h3>
+            <ul id="examList">
+                <!-- Dynamic Exam List will go here -->
+            </ul>
+            <!-- Add new Exam -->
+            <h5 class="mt-3">Add New Exam</h5>
+            <input type="text" id="newExamSyllabus" class="form-control mb-2" placeholder="Exam Syllabus">
+            <input type="date" id="newExamDate" class="form-control mb-2" placeholder="Exam Date">
+            <button class="btn btn-primary" onclick="addExam()">Add Exam</button>
+        </div>
+
+        <!-- Study Timer -->
+        <div class="study-section">
+            <h3>Study Timer</h3>
+            <input type="number" id="setMinutes" class="form-control mb-2" placeholder="Enter minutes" min="1">
+            <p class="timer-display" id="timer">00:00</p>
+            <button class="btn btn-primary" onclick="setTimer()">Set Timer</button>
+            <button class="btn btn-success" onclick="startTimer()">Start</button>
+            <button class="btn btn-secondary" onclick="resetTimer()">Reset</button>
+        </div>
+        
+        <!-- Quick Notes -->
+        <div class="study-section">
+            <h3>Quick Notes</h3>
+            <textarea id="notes" class="form-control" rows="5" placeholder="Write your notes here..."></textarea>
+            <button class="btn btn-success mt-2" onclick="saveNotes()">Save Notes</button>
+        </div>
+        
+        <!-- Study Resources -->
+        <div class="study-section">
+            <h3>Study Resources</h3>
+            <ul>
+                <li><a href="https://www.khanacademy.org/" target="_blank">Khan Academy</a></li>
+                <li><a href="https://www.coursera.org/" target="_blank">Coursera</a></li>
+                <li><a href="https://www.edx.org/" target="_blank">edX</a></li>
+            </ul>
+        </div>
+    </div>
+    
+    <script>
+        let timeLeft = 0;
+        let timerRunning = false;
+        let timerInterval;
+
+        // Load subjects into the dropdown
+        function loadSubjects() {
+            fetch('http://localhost:3000/loadsubjects',{
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.message === 'Subjects fetched successfully') {
+                    let subjects=data.subjects;
+                    subjectSelect.innerHTML = '';
+                    subjects.forEach(subject =>{
+                        let option = document.createElement('option');
+                        option.value = subject.subject_id;
+                        option.textContent = subject.sname;
+                        subjectSelect.appendChild(option);
+                        console.log(subject.subject_id);
+                    });
+                } else {
+                    alert(data.message);
+                }
+            })
+            .catch(error => {
+                console.log('Error:', error);
+                alert('Error loading subjects.'+error);
+            });
+        }
+
+        // Load exams based on the selected subject
+        function loadExams() {
+            let examList = document.getElementById('examList');
+            examList.innerHTML = '';  // Clear previous exams
+            let subjectId = parseInt(document.getElementById('subjectSelect').selectedOptions.value);
+            
+            fetch('http://localhost:3000/loadexams',{
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    subjid: subjectId
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.message === 'Exams fetched successfully') {
+                    let exams=data.exams;
+                    exams.forEach(exam =>{
+                        let li = document.createElement('li');
+                        li.textContent = `${exam.syllabus} - Exam Date: ${exam.day}`;
+                        examList.appendChild(li);
+                    });
+                } else {
+                    alert(data.message);
+                }
+            })
+            .catch(error => {
+                console.log('Error:', error);
+                alert('Error loading sessions.'+error);
+            });
+        }
+
+        // Add a new subject
+        function addSubject() {
+            const subjectName = document.getElementById("newSubjectName").value;
+            const credits = document.getElementById("newSubjectCredits").value;
+            const chapters = document.getElementById("newSubjectChapters").value;
+            
+            fetch('http://localhost:3000/addsubject',{
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    subject: subjectName,
+                    credits: credits,
+                    chapters: chapters
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.message === 'Subject added successfully') {
+                    alert('Subject added successfully!');
+                    loadSubjects();
+                } else {
+                    alert(data.message);
+                    loadSubjects();
+                }
+            })
+            .catch(error => {
+                console.log('Error:', error);
+                alert('Error adding subject.'+error);
+            });
+        }
+
+        // Add a new exam
+        function addExam() {
+            const subjectId = parseInt(document.getElementById('subjectSelect').selectedOptions.value);
+            const syllabus = document.getElementById("newExamSyllabus").value;
+            const examDate = document.getElementById("newExamDate").value;
+            
+            fetch('http://localhost:3000/addexams',{
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    subjectId: subjectId,
+                    syllabus: syllabus,
+                    date: examDate
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.message === 'Exam added successfully') {
+                    alert('Exam added successfully!'); 
+                    loadExams();
+                } else {
+                    alert(data.message);
+                }
+            })
+            .catch(error => {
+                console.log('Error:', error);
+                alert('Error adding exam.'+error);
+            });
+        }
+
+        // Study Timer functions
+        function setTimer() {
+            let minutes = document.getElementById("setMinutes").value;
+            if (minutes > 0) {
+                timeLeft = minutes * 60;
+                document.getElementById("timer").innerText = formatTime(timeLeft);
+            } else {
+                alert("Please enter a valid number of minutes.");
+            }
+        }
+
+        function startTimer() {
+            if (!timerRunning && timeLeft > 0) {
+                timerRunning = true;
+                timerInterval = setInterval(() => {
+                    if (timeLeft <= 0) {
+                        clearInterval(timerInterval);
+                        timerRunning = false;
+                        alert("Time's up!");
+                    } else {
+                        timeLeft--;
+                        document.getElementById("timer").innerText = formatTime(timeLeft);
+                    }
+                }, 1000);
+            }
+        }
+
+        function resetTimer() {
+            clearInterval(timerInterval);
+            document.getElementById("timer").innerText = "00:00";
+            timerRunning = false;
+            timeLeft = 0;
+        }
+
+        function formatTime(seconds) {
+            let minutes = Math.floor(seconds / 60);
+            let secs = seconds % 60;
+            return minutes + ":" + (secs < 10 ? "0" + secs : secs);
+        }
+
+        function saveNotes() {
+            let notes = document.getElementById("notes").value;
+            sessionStorage.setItem("studyNotes", notes);
+            alert("Notes saved!");
+        }
+
+        // Initialize page
+        // Initialize page
+        window.onload = function() {
+            loadSubjects();
+
+            // Add event listener for subject selection change
+            const subjectSelect = document.getElementById('subjectSelect');
+            subjectSelect.addEventListener('change', function() {
+                loadExams();  // Load exams whenever a subject is selected
+            });
+        };
+    </script>
+</body>
+</html>

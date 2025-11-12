@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>StudyMate</title>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.1/dist/js/bootstrap.bundle.min.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.1/dist/css/bootstrap.min.css">
+    <style>
+        body {
+            background-color: #ede8f5; 
+            font-family: 'Arial', sans-serif;
+        }
+        .navbar {
+            background-color: #3d52a0; 
+            color: #fff;
+        }
+        .navbar-brand {
+            font-weight: bold;
+            color: black;
+        }
+        .navbar-nav .nav-link {
+            color: #fff;
+        }
+        .navbar-nav .nav-link.active {
+            color: #7091e6; 
+        }
+        .navbar-nav .nav-link:hover {
+            color: #adbbda; 
+        }
+        #qotd {
+            text-align: center;
+            padding: 20px;
+            font-family: 'Georgia', 'Times New Roman', Times, serif;
+            background-color: #7091e6; 
+            color: #fff;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+        #progress {
+            text-align: center;
+            padding: 20px;
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+        .ui-widgets {
+            position: relative;
+            display: inline-block;
+            width: 15rem;
+            height: 15rem;
+            border-radius: 9rem;
+            margin: 1.5rem;
+            border: 1.2rem solid #3d52a0; 
+            box-shadow: inset 0 0 7px grey;
+            background-color: #adbbda;
+            text-align: center;
+            box-sizing: border-box;
+        }
+        .ui-values {
+            top: 40px;
+            position: absolute;
+            left: 10px;
+            right: 0;
+            font-weight: 700;
+            font-size: 3.0rem;
+            color: #3d52a0; 
+        }
+        .ui-labels {
+            left: 0;
+            bottom: -16px;
+            text-shadow: 0 0 4px grey;
+            color: #3d52a0;
+            position: absolute;
+            width: 100%;
+            font-size: 18px;
+        }
+        #todo {
+            padding: 20px;
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+        .task-item {
+            margin: 0.5rem 0;
+            padding: 2px;
+            background-color: #f8f9fa;
+            border-radius: 5px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            transition: background-color 0.3s ease;
+        }
+        .task-item:checked + label {
+            text-decoration: line-through;
+            color: #8697c4;
+        }
+
+        .btn-primary {
+            background-color: #3d52a0;
+            border-color: #3d52a0;
+        }
+
+        .btn-primary:hover {
+            background-color: #7091e6;
+            border-color: #7091e6;
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg bg-body-tertiary" id="navbar">
+        <div class="container-fluid">
+          <a class="navbar-brand">StudyMate</a>
+          <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav">
+              <li class="nav-item">
+                <a class="nav-link active" aria-current="page" href="home.html">Home</a>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link" href="sessions.html">Sessions</a>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link" href="subjects.html">Subjects</a>
+              </li>
+            </ul>
+          </div>
+        </div>
+    </nav>
+    <div class="container-fluid" id="content">
+        <div class="col-md-12" id="qotd">
+            <p>The beautiful thing about learning is that no one can take it away from you.</p>
+        </div>
+        <div class="row">
+            <div class="col-sm-6" id="progress">
+                <h3>Your Progress</h3>
+                <div>
+                    <div class="ui-widgets" id="progressCircle">
+                        <div class="ui-values">5%</div>
+                        <div class="ui-labels" style="color: black;">Tasks done</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-sm-6">
+                <div class="container" id="todo">
+                    <form id="form">
+                        <h3 style="text-align: center;">To-do List</h3>
+                    </form>
+                    <button class="btn btn-primary" onclick="addTask()">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-plus-square-fill" viewBox="0 0 16 16">
+                            <path d="M2 0a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V2a2 2 0 0 0-2-2zm6.5 4.5v3h3a.5.5 0 0 1 0 1h-3v3a.5.5 0 0 1-1 0v-3h-3a.5.5 0 0 1 0-1h3v-3a.5.5 0 0 1 1 0"/>
+                        </svg>
+                        Add Task</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script>
+        let task_count=0;
+        loadTasks();
+        function addTask(){
+            let tname=prompt('Enter task name');
+            let task={
+                task_description: tname,
+                status: 0
+            };
+            fetch('http://localhost:3000/addtasks',{
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(task)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.message === 'Task added successfully') {
+                    alert('Task added successfully!');
+                    loadTasks();  // Reload tasks (to fetch from the database)
+                } else {
+                    alert(data.message);
+                }
+            })
+            .catch(error => {
+                console.log('Error:', error);
+                alert('Error adding task.'+error);
+            });
+        }
+        function loadTasks(){
+            fetch('http://localhost:3000/loadtasks',{
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.tasks) {
+                        let form = document.getElementById('form');
+                        form.innerHTML = '';
+                        data.tasks.forEach(task => {
+                            let x = document.createElement("input");
+                            x.setAttribute("type", "checkbox");
+                            x.setAttribute("class", "task-item");
+                            x.checked = task.status === 1; 
+
+                            console.log(task);
+                            let lab = document.createElement("label");
+                            lab.innerHTML = task.task_description;  // Display task description
+
+                            form.appendChild(x);
+                            form.appendChild(lab);
+                            form.appendChild(document.createElement("br"));
+
+                            x.addEventListener("change", function () {
+                                updateTaskStatus(task.task_id, x.checked);  // Update task status in the database when checkbox changes
+                                console.log('task: '+task.task_id+' '+x.checked);
+                            });
+                        });
+                        displayProgress();
+                }
+                else {
+                    alert(data.message);
+                }
+            })
+            .catch(error => {
+                console.log('Error:', error);
+                alert('Error displaying tasks.'+error);
+            });
+        }
+        
+        function updateTaskStatus(task_id, check) {
+            let c1;
+            if(check){
+                c1=1;
+            }
+            else{
+                c1=0;
+            }
+            fetch('http://localhost:3000/updatetasks',{
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    task_id: task_id,
+                    stat: c1
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if(data.message==='Task updated'){
+                    displayProgress();
+                }
+                else {
+                    alert(data.message);
+                }
+            })
+            .catch(error => {
+                console.log('Error:', error);
+                alert('Error updating tasks.'+error);
+            });
+        }
+
+        function displayProgress(){
+            fetch('http://localhost:3000/displayprogress',{
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if(data.message==='Can display'){
+                    console.log(data);
+                    let tot=data.total;
+                    let comp=data.comp;
+                    let percentage=Math.trunc((comp/tot)*100);
+                    console.log(tot,comp,percentage);
+                    var progressCircle = document.getElementById('progressCircle');
+                    progressCircle.style.backgroundImage = `conic-gradient(#b6d3fb 0%, #b6d3fb ${percentage}%, #ccc ${percentage}%)`;
+                    var uiValues = progressCircle.querySelector('.ui-values');
+                    uiValues.innerText = percentage + '%';
+                }
+                else {
+                    alert(data.message);
+                }
+            })
+            .catch(error => {
+                console.log('Error:', error);
+                alert('Error updating tasks.'+error);
+            });
+        }
+    </script>
+</body>
+</html>
